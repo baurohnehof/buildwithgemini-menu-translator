@@ -1,198 +1,165 @@
-<div align="center">
+# 🍽️ Menu Translator — Multimodal Travel Dining Agent
 
-<img src="assets/build-with-gemini-banner.png" alt="Build with Gemini" width="100%" />
+[![Build with Gemini](https://img.shields.io/badge/Build%20with%20Gemini-World%20Tour-4285F4?logo=google&logoColor=white)](https://antigravity.google)
+[![Track 3](https://img.shields.io/badge/Track%203-Agent--First%20Apps-EA4335)](#)
+[![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Agent%20Platform-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/products/agent-platform)
+[![ADK](https://img.shields.io/badge/Built%20with-ADK%20%2B%20agents--cli-34A853)](https://google.github.io/adk-docs/)
+[![Model](https://img.shields.io/badge/Model-Gemini%203.6%20Flash-blue)](https://ai.google.dev/)
+[![A2UI](https://img.shields.io/badge/UI-A2UI%20v0.8-orange)](https://adk.dev/integrations/a2ui/)
 
-# 🚀 Build with Gemini · Track 3
-
-### The starter kit for Track 3 of the Build with Gemini World Tour, and a showcase of what participants built with it.
-
-Clone this repo, open [Antigravity](https://antigravity.google), and build your own agent-first app on Google Cloud. Every project in the [gallery below](#-featured-projects) was built the same way: prototyped with Antigravity and `agents-cli`, equipped with Memory, tools, and storage, deployed to Agent Platform, and given a face on Cloud Run.
-
-<br/>
-
-![Build with Gemini](https://img.shields.io/badge/Build%20with%20Gemini-World%20Tour-4285F4?logo=google&logoColor=white)
-![Track 3](https://img.shields.io/badge/Track%203-Agent--First%20Apps-EA4335)
-![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Agent%20Platform-4285F4?logo=googlecloud&logoColor=white)
-![Built with ADK](https://img.shields.io/badge/Built%20with-ADK%20%2B%20agents--cli-34A853)
-![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
-![Projects](https://img.shields.io/badge/Projects-8-blue)
-
-<sub>📖 <a href="https://cszhu.github.io/build-with-gemini/">Lab Guide</a> · 🛠️ <a href="https://google.github.io/agents-cli/guide/getting-started/">agents-cli</a> · 🤖 <a href="https://google.github.io/adk-docs/">ADK</a></sub>
-
-</div>
+> A conversational, multimodal agent that helps travelers effortlessly read, understand, and visualize foreign restaurant menus, identify dietary details (vegetarian, vegan, non-vegetarian), and preview authentic dish photos generated on the fly.
 
 ---
 
-## 📚 Table of Contents
+## 🌟 Overview
 
-- [🧩 Anatomy of a Track 3 Project](#-anatomy-of-a-track-3-project)
-- [📂 Featured Projects](#-featured-projects)
-  - [🛍️ Commerce & Marketplace Agents](#️-commerce--marketplace-agents)
-  - [🍳 Food & Recipe Agents](#-food--recipe-agents)
-  - [✈️ Travel & Local Agents](#️-travel--local-agents)
-  - [💪 Health, Fitness & Wellness Agents](#-health-fitness--wellness-agents)
-  - [📚 Learning & Knowledge Agents](#-learning--knowledge-agents)
-  - [🎨 Creative & Media Agents](#-creative--media-agents)
-  - [🏢 Productivity & Enterprise Agents](#-productivity--enterprise-agents)
-  - [🧪 Experimental & Other](#-experimental--other)
-- [🧠 What's in this Repo](#-whats-in-this-repo)
-- [🧰 Build Your Own](#-build-your-own)
-- [📚 Resources](#-resources)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
+When traveling abroad or visiting authentic international restaurants, reading the menu can be daunting. Foreign scripts, unfamiliar dish names, and vague ingredient descriptions leave travelers uncertain about what they are ordering—especially diners with strict dietary restrictions.
+
+**Menu Translator** solves this by combining multimodal vision, structured reasoning, generative imagery, and agent-first UI:
+1. **Snap & Upload**: The user uploads a photo of any restaurant menu.
+2. **Intelligent Extraction & Categorization**: Powered by **Gemini 3.6 Flash**, the agent translates and explains each dish while categorizing them into `[Non-Vegetarian]`, `[Vegetarian]`, and `[Vegan]`.
+3. **Rich Agent-First UI (A2UI)**: Instead of unformatted walls of text, results are presented as structured, clean A2UI cards and categorized rows.
+4. **On-Demand Dish Visuals**: When a user inquires about a specific dish, the agent generates high-resolution, photorealistic plate previews with **Gemini 3.1 Flash Lite Image** and serves them via **Google Cloud Storage**.
+5. **Session & History Persistence**: All interactions, session contexts, user uploads, and generated visuals are stored in **Cloud Firestore** and **Cloud Storage**.
 
 ---
 
-## 🧩 Anatomy of a Track 3 Project
+## 🏗️ Architecture
 
-Every app in this collection is built from the same set of Google Cloud building blocks introduced in the lab. Once you understand this shape, you can read any project here at a glance:
+```mermaid
+graph TD
+    User([User / Browser]) <--> UI[FastAPI Frontend & A2UI Renderer]
+    UI <-->|A2A Protocol / REST| Agent[Menu Translator Agent on Agent Runtime]
+    
+    subgraph Google Cloud Platform
+        Agent <-->|Multimodal Reasoning & Vision| Gemini[Gemini 3.6 Flash]
+        Agent <-->|Image Generation| ImageGen[Gemini 3.1 Flash Lite Image]
+        Agent <-->|Sandbox Code Execution| Sandbox[Agent Engine Sandbox]
+        ImageGen -->|Save dish photos| GCS[(Cloud Storage)]
+        UI -->|Upload menu photos| GCS
+        Agent <-->|Save chat turns & sessions| Firestore[(Cloud Firestore)]
+    end
+```
 
-| Layer | What it does | Powered by |
+### Component Breakdown
+
+| Layer | Technology | Role |
 |---|---|---|
-| 🤖 **The Agent** | The core reasoning loop | [ADK](https://google.github.io/adk-docs/) + [`agents-cli`](https://google.github.io/agents-cli/guide/getting-started/), scaffolded with [Antigravity](https://antigravity.google) |
-| 🧠 **Memory** | Remembers facts across sessions | [Agent Platform Memory Bank](https://docs.cloud.google.com/gemini-enterprise-agent-platform/scale/memory-bank) |
-| 🗄️ **Structured data** | Inventory, records, lists | [Firestore](https://console.cloud.google.com/firestore) |
-| 🖼️ **Files & blobs** | Images, media, assets | [Cloud Storage](https://console.cloud.google.com/storage) |
-| 🔧 **Tools** | Take real actions and fetch real data | ADK function tools |
-| 🎨 **Media generation** | Creates images (and video) on demand | `gemini-3.1-flash-lite-image` (Nano Banana 2 Lite) · Omni (video) |
-| 🧪 **Code sandbox** | Safely runs generated code | Agent Platform code execution |
-| 🪟 **Agent-first UI** | Cards and tables instead of plain text | [A2UI](https://adk.dev/integrations/a2ui/) |
-| 🌐 **Frontend** | A shareable web face | FastAPI proxy on [Cloud Run](https://cloud.google.com/run) |
+| **Agent Reasoning** | [Google ADK](https://google.github.io/adk-docs/) + [`agents-cli`](https://google.github.io/agents-cli/) | Core agent loop handling multimodal queries and tool dispatch |
+| **Foundation Model** | `gemini-3.6-flash` | Multimodal OCR, translation, dish description, and dietary categorization |
+| **Image Generation** | `gemini-3.1-flash-lite-image` | Synthesizes realistic dish photos on demand |
+| **Agent-to-UI** | [A2UI](https://adk.dev/integrations/a2ui/) (v0.8 Catalog) | Generates structured UI components (Cards, Columns, Rows, Images) |
+| **Storage & Persistence** | Cloud Storage & Firestore | Stores uploaded menu photos, generated dish images, and chat history |
+| **Code Sandbox** | Agent Engine Sandbox | Isolated environment for safe code execution |
+| **Frontend Web App** | FastAPI + Static HTML/JS | A2A client proxy with built-in A2UI card renderer and photo upload |
 
 ---
 
-## 📂 Featured Projects
+## 📁 Repository Structure
 
-A showcase of what workshop participants built with this lab. Entries are added here from the swag and gallery submission form after each event, so the categories below start empty and fill in over time. Browse them for inspiration, or [submit your own](#-contributing) once you've published your project with the `publish-to-github` skill.
-
-<!--
-Add one entry per project, in this format:
-- 🌿 **[Project Name](https://github.com/their-handle/their-repo)**: one-line description of what it does. <br/> <sub>by [@handle](https://github.com/handle)</sub>
-
-Bump the "Projects" badge count at the top when you add one.
--->
-
-### 🛍️ Commerce & Marketplace Agents
-
-### 🍳 Food & Recipe Agents
-
-- 🥫 **[Smart Pantry Recipe Concierge](https://github.com/matthewrose/buildwithgemini-smart-pantry-recipe-concierge)**: Tracks your pantry and recommends recipes grounded in a real recipe corpus. <br/> <sub>by [@matthewrose](https://github.com/matthewrose)</sub>
-
-### ✈️ Travel & Local Agents
-
-- ⛈️ **[SafeStageWX](https://github.com/felix1028/buildwithgemini-safestagewx)**: An agentic mobile app that helps event planners identify weather threats and climate risks for an event given its date and location, providing tailored preparedness timelines from months out down to hourly day-of forecasts. <br/> <sub>by [@felix1028](https://github.com/felix1028)</sub>
-- 🌇 **[Sidewalk & Sun](https://github.com/OlafHaalstra/buildwithgemini-sidewalk-and-sun)**: Recommends sunny or shaded NYC spots from a curated 500-venue corpus, plotted on an interactive map. <br/> <sub>by [@OlafHaalstra](https://github.com/OlafHaalstra)</sub>
-
-### 💪 Health, Fitness & Wellness Agents
-
-- 🏊 **[TriCoach AI](https://github.com/common-aman/buildwithgemini-tricoach-ai)**: A triathlon coach that logs workouts, computes training zones, and generates motivational visuals. <br/> <sub>by [@common-aman](https://github.com/common-aman)</sub>
-
-### 📚 Learning & Knowledge Agents
-
-- 🎤 **[Interview Coach (PrepPal)](https://github.com/VineethBaradi/buildwithgemini-interview-coach)**: A mock-interview coach that runs LLM-driven practice sessions from a Firestore question bank and gives performance feedback. <br/> <sub>by [@VineethBaradi](https://github.com/VineethBaradi)</sub>
-
-### 🎨 Creative & Media Agents
-
-### 🏢 Productivity & Enterprise Agents
-
-- 🔧 **[GitCraft](https://github.com/fpobletemu/buildwithgemini-gitcraft)**: A developer git assistant that inspects your repo and drafts Conventional-Commits-style messages, grounded in a commit-style guide. <br/> <sub>by [@fpobletemu](https://github.com/fpobletemu)</sub>
-- 🖥️ **[IT Helpdesk Agent](https://github.com/NaweedAhmadi/buildwithgemini-it-helpdesk-agent)**: An IT support assistant that answers from a knowledge base and remembers context across sessions, with a ticket dashboard UI. <br/> <sub>by [@NaweedAhmadi](https://github.com/NaweedAhmadi)</sub>
-
-### 🧪 Experimental & Other
-
-- 🃏 **[Poker Agent](https://github.com/jakecho1108/buildwithgemini-poker-agent)**: A poker trainer with a real 800-iteration Monte Carlo equity engine and strategy tips grounded in a poker playbook. <br/> <sub>by [@jakecho1108](https://github.com/jakecho1108)</sub>
-
----
-
-## 🧠 What's in this Repo
-
-The `.agents/` folder teaches Antigravity how to build agents on Google Cloud.
-
-### Skills
-
-A **skill** is a bundle of instructions that loads automatically when it's relevant, so the agent gets the workflow right in fewer steps instead of rediscovering it each time.
-
-| Skill | What it does |
-| --- | --- |
-| [`pick-your-agent-project`](.agents/skills/pick-your-agent-project/SKILL.md) | Brainstorm your app idea and write a project brief |
-| [`troubleshoot-lab-setup`](.agents/skills/troubleshoot-lab-setup/SKILL.md) | Verify your environment and fix common setup errors |
-| [`memory-bank-setup`](.agents/skills/setup-memory-bank/SKILL.md) | Add cross-session memory to your agent with Vertex AI Memory Bank |
-| [`enable-a2ui`](.agents/skills/enable-a2ui/SKILL.md) | Make your agent reply with rich UI cards (A2UI) in the ADK dev UI |
-| [`build-agent-frontend`](.agents/skills/build-agent-frontend/SKILL.md) | Generate a FastAPI chat frontend and ship it to Cloud Run |
-| [`record-demo`](.agents/skills/record-demo/SKILL.md) | Record a branded demo video of your agent, with an optional AI soundtrack |
-| [`publish-to-github`](.agents/skills/publish-to-github/SKILL.md) | Publish your finished project to your own GitHub and submit it for swag |
-
-### Pre-configured tools (MCP)
-
-[`.agents/mcp_config.json`](.agents/mcp_config.json) wires up two [Model Context Protocol](https://modelcontextprotocol.io/) servers that authenticate with your gcloud credentials, so the agent can look things up instead of guessing:
-
-- **Firebase**: work directly with Firestore and other Firebase services
-- **Google Developer Knowledge**: grounded access to Google's official docs (Cloud, Firebase, ADK, Agent Platform)
-
-### Layout
-
-```text
-.agents/
-├── mcp_config.json    # Firebase + Developer Knowledge MCP servers
-├── rules/             # workspace rules (only deploy when asked)
-└── skills/            # the workshop skills listed above
+```
+.
+├── menu-translator/               # Main Agent Application
+│   ├── app/                       # Agent implementation
+│   │   ├── agent.py               # ADK Root Agent, system prompt & A2UI schema
+│   │   ├── tools.py               # GCS upload, Firestore logging, image gen tool
+│   │   ├── a2ui_utils.py          # A2UI callback transformer for adk web
+│   │   └── fast_api_app.py        # Local FastAPI backend
+│   ├── frontend/                  # Web Frontend & A2A Proxy
+│   │   ├── main.py                # FastAPI proxy connecting to Agent Runtime via A2A
+│   │   └── static/                # Interactive Chat UI & A2UI Renderer
+│   ├── agents-cli-manifest.yaml   # Deployment & agent configuration
+│   ├── deployment_metadata.json   # Deployed Agent Runtime & Sandbox IDs
+│   └── pyproject.toml             # Python dependencies
+├── project_brief.md               # Initial project design and architecture brief
+└── README.md                      # Project documentation
 ```
 
 ---
 
-## 🧰 Build Your Own
+## 🛠️ Key Tools & Features
 
-The full, step-by-step walkthrough lives on the **[lab guide](https://cszhu.github.io/build-with-gemini/)**. This is the short version.
+### 1. `get_dish_image(dish_name: str)`
+- Checks for an authenticated Google Custom Search image if configured.
+- Fallback: Uses `gemini-3.1-flash-lite-image` on Vertex AI to generate an authentic plate presentation.
+- Uploads the image to a Google Cloud Storage bucket (`dish_images/`) and returns a public HTTPS link for A2UI rendering.
 
-**Prerequisites** (the lab workstation comes with all of this pre-installed; you'll need it if you're running on your own machine):
+### 2. Firestore Chat Persistence
+- **`chat_history` collection**: Logs full conversation turns, including user inputs, uploaded GCS image URLs, agent replies, and generated images.
+- **`chat_sessions` collection**: Maintains indexed session metadata and structured message arrays.
 
-- A **Google Cloud project** with billing enabled
-- **[Antigravity](https://antigravity.google)** (`agy`), the coding agent that loads the skills above
-- **[agents-cli](https://google.github.io/agents-cli/guide/getting-started/)**, built on the [Agent Development Kit (ADK)](https://google.github.io/adk-docs/)
-- Authenticated gcloud: `gcloud auth login` and `gcloud auth application-default login`
-- A personal **GitHub account** for the final publish-and-submit step
+### 3. Agent Engine Sandbox
+- Configured with `AgentEngineSandboxCodeExecutor` to allow the agent to run code securely in a managed sandbox environment.
 
-**Quickstart:**
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Python 3.11+**
+- [uv](https://docs.astral.sh/uv/) (Python package manager)
+- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) (`gcloud`)
+- [agents-cli](https://google.github.io/agents-cli/guide/getting-started/):
+  ```bash
+  uv tool install google-agents-cli
+  ```
+
+### Authentication & Setup
 
 ```bash
-git clone https://github.com/cszhu/build-with-gemini
-cd build-with-gemini
-agy
+# 1. Authenticate with Google Cloud
+gcloud auth login
+gcloud auth application-default login
+
+# 2. Set your Google Cloud project
+gcloud config set project <YOUR_PROJECT_ID>
+
+# 3. Navigate to the agent directory and install dependencies
+cd menu-translator
+agents-cli install
 ```
 
-On startup, Antigravity scans the `.agents/` folder and loads the skills and tools above automatically. In the AGY prompt:
+### Running Locally with ADK Web Playground
 
-```text
-/skills            # see the installed skills
-/mcp               # confirm the firebase + google-developer-knowledge tools are connected
+To test the agent reasoning loop and A2UI cards locally:
+
+```bash
+cd menu-translator
+agents-cli playground
 ```
 
-```text
-Verify my setup.   # runs the troubleshoot-lab-setup skill to check your environment
+Open `http://localhost:8000` to interact with the agent in the ADK web interface.
+
+### Running the Web Frontend
+
+To launch the web interface with photo upload and A2UI support:
+
+```bash
+cd menu-translator/frontend
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8080 --reload
 ```
 
-Then follow the [lab guide](https://cszhu.github.io/build-with-gemini/) to design, build, deploy, and share your agent, start to finish.
+Open `http://localhost:8080` in your browser.
 
 ---
 
-## 📚 Resources
+## 🚢 Deployment
 
-- **[Lab guide](https://cszhu.github.io/build-with-gemini/)**: the step-by-step workshop
-- [Antigravity](https://antigravity.google)
-- [agents-cli](https://google.github.io/agents-cli/guide/getting-started/)
-- [Agent Development Kit (ADK)](https://google.github.io/adk-docs/)
-- [Gemini Enterprise Agent Platform](https://docs.cloud.google.com/gemini-enterprise-agent-platform)
+### Deploying the Agent to Agent Runtime
 
----
+The agent can be deployed directly to Google Cloud Agent Platform:
 
-## 🤝 Contributing
+```bash
+cd menu-translator
+agents-cli deploy
+```
 
-**Built something?** Publish it with the `publish-to-github` skill and submit it through the form it gives you. Submissions get you swag, and standout projects get added to the [Featured Projects](#-featured-projects) gallery above.
-
-**Found a bug?** If you hit a rough edge in a skill or the lab, please [open an issue](https://github.com/cszhu/build-with-gemini/issues).
+This creates a managed reasoning engine instance with A2A protocol support, code sandbox, and Cloud Trace telemetry.
 
 ---
 
 ## 📄 License
 
-This is not an officially supported Google product and is provided for the Build with Gemini workshop for demonstration purposes only.
+This project was developed as part of the **Build with Gemini** World Tour (Track 3: Agent-First Applications). Distributed under the Apache 2.0 License.

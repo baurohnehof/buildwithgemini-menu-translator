@@ -2,6 +2,8 @@ import json
 import os
 from pathlib import Path
 from zoneinfo import ZoneInfo
+# Vertex AI SessionService requires OAuth2/ADC; ensure GOOGLE_API_KEY does not override it
+os.environ.pop("GOOGLE_API_KEY", None)
 
 from google.adk.agents import Agent
 from google.adk.apps import App
