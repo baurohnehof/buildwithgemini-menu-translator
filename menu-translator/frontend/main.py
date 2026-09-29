@@ -152,9 +152,18 @@ async def chat(req: Request):
             a2a_client = factory.create(card)
 
             if use_pydantic_parts and TextPart is not None:
-                msg_parts = [Part(root=TextPart(text=message))]
+                msg_parts = [Part(root=TextPart(text=message))] if message else []
             else:
-                msg_parts = [Part(text=message)]
+                msg_parts = [Part(text=message)] if message else []
+
+            if image_data_url and "base64," in image_data_url:
+                try:
+                    from a2a.types import FilePart, FileWithBytes
+                    mime = image_data_url.split(";")[0].replace("data:", "")
+                    b64_data = image_data_url.split("base64,")[1]
+                    msg_parts.append(Part(root=FilePart(file=FileWithBytes(bytes=b64_data, mime_type=mime))))
+                except Exception:
+                    pass
 
             msg = Message(
                 message_id=str(uuid.uuid4()),
@@ -183,6 +192,18 @@ async def chat(req: Request):
 
     # Direct JSON-RPC fallback (always reliable over Agent Runtime HTTP passthrough)
     if not client_used or not parts:
+        user_parts = [{"text": message}] if message else []
+        if image_data_url and "base64," in image_data_url:
+            mime = image_data_url.split(";")[0].replace("data:", "")
+            b64_data = image_data_url.split("base64,")[1]
+            user_parts.append({
+                "kind": "file",
+                "file": {
+                    "bytes": b64_data,
+                    "mimeType": mime,
+                }
+            })
+
         rpc_payload = {
             "jsonrpc": "2.0",
             "id": str(uuid.uuid4()),
@@ -191,7 +212,7 @@ async def chat(req: Request):
                 "message": {
                     "messageId": str(uuid.uuid4()),
                     "role": "user",
-                    "parts": [{"text": message}],
+                    "parts": user_parts,
                 }
             },
         }
