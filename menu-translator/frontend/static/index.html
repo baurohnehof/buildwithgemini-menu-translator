@@ -687,10 +687,23 @@ function buildNode(id, comps, seen) {
   }
 }
 
+function unwrapA2uiMsg(m) {
+  let curr = m;
+  while (curr && typeof curr === "object" && !curr.surfaceUpdate && !curr.beginRendering) {
+    if (curr.data && typeof curr.data === "object") {
+      curr = curr.data;
+    } else {
+      break;
+    }
+  }
+  return curr || {};
+}
+
 function renderSurface(messages, container) {
   const comps = {};
   const roots = [];
-  for (const m of messages) {
+  for (const rawM of messages) {
+    const m = unwrapA2uiMsg(rawM);
     if (m.beginRendering && typeof m.beginRendering.root === "string") roots.push(m.beginRendering.root);
     const su = m.surfaceUpdate;
     if (su && Array.isArray(su.components)) {
@@ -722,7 +735,8 @@ function renderSurface(messages, container) {
 
 function flattenText(messages) {
   const out = [];
-  for (const m of messages) {
+  for (const rawM of messages) {
+    const m = unwrapA2uiMsg(rawM);
     const su = m.surfaceUpdate;
     if (su && Array.isArray(su.components)) {
       for (const c of su.components) {

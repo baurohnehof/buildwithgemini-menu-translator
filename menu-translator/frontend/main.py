@@ -72,6 +72,15 @@ async def _json_errors(request: Request, exc: Exception):
 def _extract_parts_from_raw(raw_parts: list) -> list[dict]:
     """Turn raw A2A/JSON-RPC parts into structured parts for the chat UI."""
     out: list[dict] = []
+
+    def _unwrap_a2ui(val):
+        while isinstance(val, dict) and ("surfaceUpdate" not in val and "beginRendering" not in val):
+            if "data" in val and isinstance(val["data"], dict):
+                val = val["data"]
+            else:
+                break
+        return val
+
     for p in raw_parts:
         if isinstance(p, dict):
             if p.get("kind") == "text" or "text" in p:
@@ -81,7 +90,7 @@ def _extract_parts_from_raw(raw_parts: list) -> list[dict]:
             elif p.get("kind") == "data" or "data" in p:
                 meta = p.get("metadata", {}) or {}
                 mime = meta.get("mimeType") if isinstance(meta, dict) else None
-                data_val = p.get("data")
+                data_val = _unwrap_a2ui(p.get("data"))
                 if mime == _A2UI_MIME or isinstance(data_val, (dict, list)):
                     out.append({"kind": "a2ui", "data": data_val})
             elif p.get("kind") == "file" or "file" in p:
@@ -96,10 +105,9 @@ def _extract_parts_from_raw(raw_parts: list) -> list[dict]:
             elif getattr(root, "data", None) is not None:
                 meta = getattr(root, "metadata", None) or {}
                 mime = meta.get("mimeType") if isinstance(meta, dict) else None
-                if mime == _A2UI_MIME:
-                    out.append({"kind": "a2ui", "data": root.data})
-                elif isinstance(root.data, (dict, list)):
-                    out.append({"kind": "a2ui", "data": root.data})
+                data_val = _unwrap_a2ui(root.data)
+                if mime == _A2UI_MIME or isinstance(data_val, (dict, list)):
+                    out.append({"kind": "a2ui", "data": data_val})
             elif hasattr(root, "file") and getattr(root.file, "uri", None):
                 out.append({"kind": "text", "text": root.file.uri})
     return out
@@ -248,4 +256,4 @@ app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    uvicorn.run("frontend.main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), reload=True)
